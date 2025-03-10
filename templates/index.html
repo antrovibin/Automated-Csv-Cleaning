@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Cleaner</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1e1e2f;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            background-image: linear-gradient(135deg, #1e1e2f, #4a90e2);
+            overflow: hidden;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            color: #4a90e2;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        /* Smooth FadeIn Animation */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background-color: #222233;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Styling File Input */
+        #fileInput {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #fff;
+            background-color: #444;
+            color: white;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+            outline: none;
+        }
+
+        #fileInput:hover {
+            background-color: #555;
+        }
+
+        /* Upload Button */
+        .upload-btn {
+            background-color: #4a90e2;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            letter-spacing: 1px;
+        }
+
+        .upload-btn:hover {
+            background-color: #357abd;
+            transform: translateY(-3px);
+        }
+
+        /* Progress Bar Styling */
+        .progress-bar {
+            width: 0;
+            height: 10px;
+            background-color: #28a745;
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        #processing {
+            display: none;
+            margin-top: 15px;
+            color: #ff6a00;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Download Button */
+        #downloadBtn {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #downloadBtn button {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        #downloadBtn button:hover {
+            background-color: #218838;
+            transform: translateY(-3px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .card {
+                padding: 25px;
+                max-width: 400px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .upload-btn {
+                font-size: 14px;
+                padding: 12px 20px;
+            }
+
+            #fileInput {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Upload and Clean Your CSV</h2>
+
+        <!-- File input area -->
+        <input type="file" id="fileInput">
+
+        <!-- Upload Button -->
+        <button class="upload-btn" onclick="uploadFile()">Upload</button>
+
+        <!-- Processing Text -->
+        <p id="processing">Processing...</p>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar" id="progressBar"></div>
+
+        <!-- Download Button -->
+        <a id="downloadBtn" href="#" class="hidden" download>
+            <button>Download Cleaned CSV</button>
+        </a>
+    </div>
+
+    <script>
+        function uploadFile() {
+            const fileInput = document.getElementById("fileInput").files[0];
+            if (!fileInput) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            // Show processing state and hide download button
+            document.getElementById("processing").style.display = "block";
+            document.getElementById("downloadBtn").style.display = "none";
+            document.getElementById("progressBar").style.width = "0%";
+
+            const formData = new FormData();
+            formData.append("file", fileInput);
+
+            // Set up fetch request for file upload with progress bar
+            fetch("http://127.0.0.1:8000/upload/", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("processing").style.display = "none";
+                if (data.download_url) {
+                    const downloadBtn = document.getElementById("downloadBtn");
+                    downloadBtn.href = `http://127.0.0.1:8000${data.download_url}`;
+                    downloadBtn.style.display = "block";
+
+                    // Smoothly update the progress bar
+                    setTimeout(() => {
+                        document.getElementById("progressBar").style.width = "100%";
+                    }, 1000);
+                } else {
+                    alert("Error: " + data.error);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                document.getElementById("processing").style.display = "none";
+                alert("Error processing file.");
+            });
+        }
+    </script>
+
+</body>
+
+</html>
